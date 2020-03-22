@@ -1,0 +1,22 @@
+---
+defaults:
+
+  server:
+    host: "localhost"
+    port:
+      http: 8080
+
+  database:
+    type: "mysql"
+    port: 3306
+    schema: "svc-article"
+    host: "localhost"
+    user: "svc-article"
+    pass: "supersecret"
+    migration_path: "database/migration/"
+
+  requests_paths:
+    ping: "/ping"
+    post_articles: "/articles"
+    get_articles: "/articles/{id}"
+    get_tags: "/tags/{tagName}/{date}"
