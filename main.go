@@ -35,7 +35,7 @@ func main() {
 
 	api.SetupRouter()
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.App().Server.Port.Http), api.Router); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", config.App().Server.Port.Http), api.Router); err != nil {
 		logger.Errorf("error starting server because: %v", err)
 		os.Exit(1)
 	}

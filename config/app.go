@@ -8,18 +8,11 @@ type AppConfig struct {
 		}
 	}
 	Database struct {
-		Type          string `mapstructure:"type"`
-		Port          int    `mapstructure:"port"`
-		Schema        string `mapstructure:"schema"`
-		Host          string `mapstructure:"host"`
-		User          string `mapstructure:"user"`
-		Pass          string `mapstructure:"pass"`
-		MigrationPath string `mapstructure:"migration_path"`
-	}
-	RequestPath struct {
-		Ping        string `mapstructure:"ping"`
-		GetArticle  string `mapstructure:"get_articles"`
-		PostArticle string `mapstructure:"post_articles"`
-		GetTags     string `mapstructure:"get_tags"`
+		Type   string `mapstructure:"type"`
+		Port   int    `mapstructure:"port"`
+		Schema string `mapstructure:"schema"`
+		Host   string `mapstructure:"host"`
+		User   string `mapstructure:"user"`
+		Pass   string `mapstructure:"pass"`
 	}
 }

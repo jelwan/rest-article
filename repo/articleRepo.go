@@ -10,18 +10,34 @@ import (
 	"rest-article/log"
 )
 
+type Repo interface {
+	GetArticleByID(id string) (*model.Article, []*model.Tag, error)
+	CountTagForDateName(name, date string) (int, error)
+	GetRelatedTagForDateAndName(name, date string) ([]string, error)
+	GetArticleIDForDateAndTag(name, date string) ([]string, error)
+	CreateArticle(article model.Article, tags []string) (*model.Article, []*model.Tag, error)
+	getTagsByName(ctx context.Context, tagNames []string) ([]*model.Tag, error)
+	getTagById(ctx context.Context, id int) (*model.Tag, error)
+	getArticleTagsByArticleID(ctx context.Context, articleID string) ([]int, error)
+	insertTag(ctx context.Context, tagName string) (int, error)
+	insertArticle(ctx context.Context, article model.Article) error
+	insertArticleTags(ctx context.Context, articleID int, tagIDs []int) error
+}
+
 type ArticleRepo struct {
 	ctx    context.Context
 	db     *sql.DB
 	logger *logrus.Entry
 }
 
-func NewArticleRepo(ctx context.Context, db *sql.DB) *ArticleRepo {
-	return &ArticleRepo{
+func NewArticleRepo(ctx context.Context, db *sql.DB) Repo {
+	repo := &ArticleRepo{
 		ctx:    ctx,
 		db:     db,
 		logger: log.NewLogger().WithContext(ctx).WithField("module", "repo"),
 	}
+
+	return repo
 }
 
 func (articleRepo *ArticleRepo) GetArticleByID(id string) (*model.Article, []*model.Tag, error) {
@@ -179,10 +195,6 @@ func (articleRepo *ArticleRepo) GetArticleIDForDateAndTag(name, date string) ([]
 	return taggedArticles, nil
 }
 
-func (articleRepo *ArticleRepo) GetTagSummary(tag string, date string) (*model.Article, error) {
-	return nil, nil
-}
-
 func (articleRepo *ArticleRepo) CreateArticle(article model.Article, tags []string) (*model.Article, []*model.Tag, error) {
 
 	tagItems, err := articleRepo.getTagsByName(articleRepo.ctx, tags)
@@ -295,7 +307,8 @@ func (articleRepo *ArticleRepo) getTagById(ctx context.Context, id int) (*model.
 
 func (articleRepo *ArticleRepo) getArticleTagsByArticleID(ctx context.Context, articleID string) ([]int, error) {
 
-	rows, err := articleRepo.db.QueryContext(ctx, "SELECT `tag_id` FROM `svc-article`.article_tags WHERE `article_id` = ?", articleID)
+	rows, err := articleRepo.db.QueryContext(ctx,
+		"SELECT `tag_id` FROM `svc-article`.article_tags WHERE `article_id` = ?", articleID)
 	if err != nil {
 		articleRepo.logger.
 			WithFields(field.ErrorFields("getArticleTagsByArticleID", "QueryContext")).

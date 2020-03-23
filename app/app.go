@@ -25,7 +25,7 @@ type App struct {
 	ctx      context.Context
 	Router   *mux.Router
 	Database *sql.DB
-	repo     *repo.ArticleRepo
+	repo     repo.Repo
 	logger   *logrus.Entry
 }
 
@@ -56,6 +56,13 @@ type TagsResponse struct {
 	} `json:"related_tags"`
 }
 
+type TagSummaryResponse struct {
+	Tag         string   `json:"tag"`
+	Count       int      `json:"count"`
+	Articles    []string `json:"articles"`
+	RelatedTags []string `json:"related_tag"`
+}
+
 type ErrorResponse struct {
 	ID      string        `json:"id,omitempty"`
 	Success bool          `json:"success,omitempty"`
@@ -65,6 +72,7 @@ type ErrorResponse struct {
 type ResponseError string
 
 func NewApp(router *mux.Router, database *sql.DB, ctx context.Context) *App {
+
 	return &App{
 		Router:   router,
 		Database: database,
@@ -101,12 +109,32 @@ func (app *App) getArticleFunction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		log.Fatal("No ID in the request path")
+		err := handleError(w, "bad request, id empty", http.StatusBadRequest)
+		if err != nil {
+			app.logger.Errorf("error sending error response because: %v", err)
+		}
+		return
+	}
+
+	if id == "" {
+		err := handleError(w, "no id provided", http.StatusBadRequest)
+		if err != nil {
+			app.logger.Errorf("no id provided")
+		}
+		return
+	}
+
+	if _, err := strconv.Atoi(id); err != nil {
+		err = handleError(w, "provided id is not a number", http.StatusBadRequest)
+		if err != nil {
+			app.logger.Errorf("provided id is not a number")
+		}
+		return
 	}
 
 	article, tags, err := app.repo.GetArticleByID(id)
 	if err != nil {
-		err = app.handleError(w, err.Error(), http.StatusInternalServerError)
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
 		if err != nil {
 			app.logger.Errorf("error sending error response because: %v", err)
 		}
@@ -138,9 +166,18 @@ func (app *App) postArticleFunction(w http.ResponseWriter, r *http.Request) {
 	var article Article
 	err := json.NewDecoder(r.Body).Decode(&article)
 	if err != nil {
-		err = app.handleError(w, err.Error(), http.StatusInternalServerError)
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
 		if err != nil {
 			app.logger.Errorf("error decoding json post body because: %v", err)
+		}
+		return
+	}
+
+	err = checkArticlePost(&article, w)
+	if err != nil {
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
+		if err != nil {
+			app.logger.Errorf("error checking post request because: %v", err)
 		}
 		return
 	}
@@ -156,7 +193,7 @@ func (app *App) postArticleFunction(w http.ResponseWriter, r *http.Request) {
 
 	articleRes, _, err := app.repo.CreateArticle(articleModel, article.Tags)
 	if err != nil {
-		err = app.handleError(w, err.Error(), http.StatusInternalServerError)
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
 		if err != nil {
 			app.logger.Errorf("error sending error response because: %v", err)
 		}
@@ -174,6 +211,35 @@ func (app *App) postArticleFunction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func checkArticlePost(article *Article, w http.ResponseWriter) error {
+	if article.Id == "" {
+		err := handleError(w, "no id provided", http.StatusBadRequest)
+		return err
+	}
+
+	if article.Title == "" {
+		err := handleError(w, "no title provided", http.StatusBadRequest)
+		return err
+	}
+
+	if article.Date == "" {
+		err := handleError(w, "no date provided", http.StatusBadRequest)
+		return err
+	}
+
+	if article.Body == "" {
+		err := handleError(w, "no body provided", http.StatusBadRequest)
+		return err
+	}
+
+	if len(article.Tags) <= 0 {
+		err := handleError(w, "no tags provided", http.StatusBadRequest)
+		return err
+	}
+
+	return nil
+}
+
 func (app *App) getTagsFunction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	tagName, ok := vars["tagName"]
@@ -186,11 +252,34 @@ func (app *App) getTagsFunction(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("No ID in the request path")
 	}
 
-	dateStr, _ := time.Parse("20060102", date)
+	if tagName == "" {
+		err := handleError(w, "no tag name provided", http.StatusBadRequest)
+		if err != nil {
+			app.logger.Errorf("no tag name provided")
+		}
+		return
+	}
+
+	if date == "" {
+		err := handleError(w, "no date provided", http.StatusBadRequest)
+		if err != nil {
+			app.logger.Errorf("no date provided")
+		}
+		return
+	}
+
+	dateStr, err := time.Parse("20060102", date)
+	if err != nil {
+		err := handleError(w, "bad date format provided", http.StatusBadRequest)
+		if err != nil {
+			app.logger.Errorf("bad date format provided")
+		}
+		return
+	}
 
 	tagCount, err := app.repo.CountTagForDateName(tagName, dateStr.String())
 	if err != nil {
-		err = app.handleError(w, err.Error(), http.StatusInternalServerError)
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
 		if err != nil {
 			app.logger.Errorf("error sending error response because: %v", err)
 		}
@@ -199,7 +288,7 @@ func (app *App) getTagsFunction(w http.ResponseWriter, r *http.Request) {
 
 	relatedTags, err := app.repo.GetRelatedTagForDateAndName(tagName, dateStr.String())
 	if err != nil {
-		err = app.handleError(w, err.Error(), http.StatusInternalServerError)
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
 		if err != nil {
 			app.logger.Errorf("error sending error response because: %v", err)
 		}
@@ -208,18 +297,11 @@ func (app *App) getTagsFunction(w http.ResponseWriter, r *http.Request) {
 
 	taggedArticles, err := app.repo.GetArticleIDForDateAndTag(tagName, dateStr.String())
 	if err != nil {
-		err = app.handleError(w, err.Error(), http.StatusInternalServerError)
+		err = handleError(w, err.Error(), http.StatusInternalServerError)
 		if err != nil {
 			app.logger.Errorf("error sending error response because: %v", err)
 		}
 		return
-	}
-
-	type TagSummaryResponse struct {
-		Tag         string   `json:"tag"`
-		Count       int      `json:"count"`
-		Articles    []string `json:"articles"`
-		RelatedTags []string `json:"related_tag"`
 	}
 
 	response := TagSummaryResponse{
@@ -241,7 +323,7 @@ func (app *App) pingFunction(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (app *App) handleError(w http.ResponseWriter, message string, statusCode int) error {
+func handleError(w http.ResponseWriter, message string, statusCode int) error {
 
 	msg := ResponseError(message)
 	body, err := json.Marshal(ErrorResponse{
@@ -250,14 +332,14 @@ func (app *App) handleError(w http.ResponseWriter, message string, statusCode in
 	})
 
 	if err != nil {
-		app.logger.Errorf("error in marshaling JSON success response because: %v", err)
+		log.NewLogger().Errorf("error in marshaling JSON success response because: %v", err)
 		return err
 	}
 
 	w.Header().Add(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(statusCode)
 	if _, err := w.Write(body); err != nil {
-		app.logger.Errorf("error writing response because: %v", err)
+		log.NewLogger().Errorf("error writing response because: %v", err)
 		return err
 	}
 
