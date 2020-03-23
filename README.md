@@ -110,17 +110,14 @@ The REST API to the rest article is described below.
     Content-Length: 87
 
     {"tag":"science","count":1,"articles":["5"],"related_tag":["health","fitness","tech"]}
+    
 
 ## Running the tests
 
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+Run test by using the makefile test comand
 
 ```
-Give an example
+make test
 ```
 
 ## Authors
