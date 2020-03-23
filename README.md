@@ -1,6 +1,6 @@
 # Rest Article
 
-A simple rest api for creating and retrieving articles with tags, the server runs in a docker container and all data is stored in a docker contained mysql database.
+A simple rest api for creating and retrieving articles with tags, the server runs in a docker container and all data is being stored in a docker contained mysql database.
 
 ## Getting Started
 
@@ -20,13 +20,13 @@ Docker 19.03.7
 
 The following steps will setup the docker database and get the service running
 
-Use the makefile to first create the mysql docker container and wait for the container to start an initalise
+Use the makefile to first create the mysql docker container and wait for the container to start and initialise
 
 ```
 make docker.database
 ```
 
-Use the makefile to install the migraton requrements and create the database schema and tabels
+Use the makefile to install the migration requirements and create the database schema and tables
 
 ```
 make db.setup
@@ -114,7 +114,7 @@ The REST API to the rest article is described below.
 
 ## Running the tests
 
-Run test by using the makefile test comand
+Run test by using the makefile test command
 
 ```
 make test
