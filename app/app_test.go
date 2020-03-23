@@ -110,10 +110,13 @@ func TestPostArticleFunction(t *testing.T) {
 	app.SetupRouter()
 	app.Router.ServeHTTP(resp, req)
 
-	var respBody ErrorResponse
-	_ = json.NewDecoder(resp.Body).Decode(&respBody)
+	t.Log(resp)
 
-	assert.Equal(t, resp.Code, http.StatusOK)
+	var respBody CreateArticleResponse
+	_ = json.NewDecoder(resp.Body).Decode(&respBody)
+	t.Log(respBody)
+
+	assert.Equal(t, resp.Code, http.StatusCreated)
 }
 
 func TestPostArticleFunctionBadId(t *testing.T) {
