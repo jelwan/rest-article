@@ -42,7 +42,8 @@ type PostArticleRequest struct {
 }
 
 type CreateArticleResponse struct {
-	Id int `json:"id"`
+	Success bool `json:"success"`
+	Id      int  `json:"id"`
 }
 
 type TagsResponse struct {
@@ -201,13 +202,15 @@ func (app *App) postArticleFunction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := CreateArticleResponse{
-		Id: articleRes.Id,
+		Success: true,
+		Id:      articleRes.Id,
 	}
 
 	w.Header().Add(HeaderContentType, ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(err)
+		app.logger.Errorf("error sending error response because: %v", err)
+		return
 	}
 }
 
@@ -314,7 +317,8 @@ func (app *App) getTagsFunction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(err)
+		app.logger.Errorf("error sending error response because: %v", err)
+		return
 	}
 }
 

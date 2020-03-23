@@ -57,6 +57,9 @@ status:
 compile:
 	$(GO) build $(BUILD_FLAGS) $(TARGET_FLAGS) main.go
 
+test:
+	$(GO) test ./...
+
 .PHONY: docker
 
 docker.build:		## Build docker image
@@ -77,7 +80,6 @@ docker.database :
 .PHONY: db.*
 
 DB_MIGRATE 	= @migrate -database '$(DB_URI)' -path $(DB_MIGRATION_PATH)
-DB_SEED 	= @migrate -database '$(DB_URI)' -path $(DB_SEED_PATH)
 DB_SETUP 	= @migrate -database '$(DB_BASE_URI)/mysql' -path $(DB_SETUP_PATH)
 
 db.status:
@@ -93,13 +95,6 @@ db.setup.up: db.req ## Run setup "up" tasks.
 	$(DB_SETUP) up $(n)
 db.setup.down: db.req ## Run setup "down" tasks.
 	$(DB_SETUP) down $(n)
-
-# seed
-db.seed: db.seed.up ## Alias for db.seed.up
-db.seed.up: db.req ## Run seed "up" tasks.
-	$(DB_SEED) up $(n)
-db.seed.down: db.req ## Run seed "down" tasks.
-	$(DB_SEED) down $(n)
 
 # migrate
 db.migrate: db.migrate.up ## Alias for db.migrate.up

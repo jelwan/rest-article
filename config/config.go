@@ -35,7 +35,7 @@ func loadAppConfig() *AppConfig {
 
 	app, ok := configMap["defaults"]
 	if app == nil || !ok {
-		logger.Fatalf("unable to get environment [%s] in config [%s] with error: %v", appConfigPath, err)
+		logger.Fatalf("unable to get environment [defaults] in config [%s] with error: %v", appConfigPath, err)
 	}
 
 	return app

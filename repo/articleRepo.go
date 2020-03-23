@@ -237,7 +237,7 @@ func (articleRepo *ArticleRepo) CreateArticle(article model.Article, tags []stri
 	if err != nil {
 		articleRepo.logger.
 			WithFields(field.ErrorFields("CreateArticle", "insertArticle")).
-			Errorf("failed to insert new article %s, because %v", article.Id, err)
+			Errorf("failed to insert new article %d, because %v", article.Id, err)
 		return nil, nil, err
 	}
 
@@ -298,7 +298,7 @@ func (articleRepo *ArticleRepo) getTagById(ctx context.Context, id int) (*model.
 	if err != nil {
 		articleRepo.logger.
 			WithFields(field.ErrorFields("getTagById", "Scan")).
-			Errorf("failed to query article id %s because %v", id, err)
+			Errorf("failed to query article id %d because %v", id, err)
 		return nil, err
 	}
 
@@ -322,7 +322,7 @@ func (articleRepo *ArticleRepo) getArticleTagsByArticleID(ctx context.Context, a
 		err := rows.Scan(&tag)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				articleRepo.logger.Infof("no article tags found for article id %d", articleID)
+				articleRepo.logger.Infof("no article tags found for article id %s", articleID)
 				return nil, fmt.Errorf("no article tags found found")
 			} else {
 				articleRepo.logger.
